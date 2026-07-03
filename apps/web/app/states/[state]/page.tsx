@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listDistrictsByState } from "@/lib/data";
 
+export const dynamic = "force-dynamic";
+
 // A state's districts. Each links to the seat page listing its candidates.
 export default async function StatePage({ params }: { params: { state: string } }) {
   const districts = await listDistrictsByState(params.state);

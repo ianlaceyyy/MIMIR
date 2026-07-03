@@ -5,6 +5,8 @@ import { PartyLabel } from "@/components/PartyLabel";
 import { SourceBadge } from "@/components/SourceBadge";
 import { ISSUE_LABELS } from "@mimir/shared";
 
+export const dynamic = "force-dynamic";
+
 // Full candidate profile: bio, finance, stated positions, and (for incumbents)
 // legislative + voting record. Every section cites its source.
 export default async function CandidatePage({

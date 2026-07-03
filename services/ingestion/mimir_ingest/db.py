@@ -48,7 +48,15 @@ def normalize_db_url(url: str) -> str:
     return urlunsplit((scheme, parts.netloc, parts.path, urlencode(kept), parts.fragment))
 
 
-engine = create_engine(normalize_db_url(settings.database_url), future=True)
+# gssencmode=disable: libpq tries a GSSAPI-encryption probe before SSL by default;
+# in sandboxed networks that probe packet can be dropped and the connection hangs
+# (TCP itself succeeds). Disabling it makes psycopg connect immediately. Harmless
+# where GSSAPI isn't used. (Same class of issue as the IPv4 forcing in http.py.)
+engine = create_engine(
+    normalize_db_url(settings.database_url),
+    connect_args={"gssencmode": "disable"},
+    future=True,
+)
 
 
 class MissingSourceError(ValueError):
@@ -97,6 +105,13 @@ ENTITY_CONFIG: dict[str, dict[str, Any]] = {
         "conflict": ["candidateId", "seatId"],
         "enums": {"status": "IncumbencyStatus"},
         "provenance": [],
+        "has_id": True,
+    },
+    "Demographics": {
+        "table": '"Demographics"',
+        "conflict": ["districtId"],  # @unique — one demographics row per district
+        "enums": {},
+        "provenance": ["fetchedAt"],
         "has_id": True,
     },
 }
@@ -244,18 +259,27 @@ def upsert_records(records: Iterable[Record], *, dry_run: bool = False) -> int:
 
 
 def seed_states(*, dry_run: bool = False) -> int:
-    """Upsert the State reference table. Idempotent."""
+    """Upsert the State reference table. Idempotent.
+
+    Uses a single multi-row INSERT (one round-trip) rather than one statement per
+    state — matters over a high-latency pooled connection.
+    """
     from .reference.states import STATES
 
     if dry_run:
         return len(STATES)
+
+    values = ", ".join(f"(:fips{i}, :abbr{i}, :name{i})" for i in range(len(STATES)))
+    params: dict[str, Any] = {}
+    for i, s in enumerate(STATES):
+        params[f"fips{i}"], params[f"abbr{i}"], params[f"name{i}"] = s.fips, s.abbr, s.name
+
     with engine.begin() as conn:
-        for s in STATES:
-            conn.execute(
-                text(
-                    'INSERT INTO "State" (fips, abbr, name) VALUES (:fips, :abbr, :name) '
-                    'ON CONFLICT (fips) DO UPDATE SET abbr = EXCLUDED.abbr, name = EXCLUDED.name'
-                ),
-                {"fips": s.fips, "abbr": s.abbr, "name": s.name},
-            )
+        conn.execute(
+            text(
+                f'INSERT INTO "State" (fips, abbr, name) VALUES {values} '
+                "ON CONFLICT (fips) DO UPDATE SET abbr = EXCLUDED.abbr, name = EXCLUDED.name"
+            ),
+            params,
+        )
     return len(STATES)

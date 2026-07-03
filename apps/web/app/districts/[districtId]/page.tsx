@@ -5,6 +5,8 @@ import { CandidateCard } from "@/components/CandidateCard";
 import { DistrictHeader } from "@/components/DistrictHeader";
 import { CANDIDATE_SORT_RULE } from "@mimir/shared";
 
+export const dynamic = "force-dynamic";
+
 // The core page: one district's seat and EVERY candidate running for it.
 // [districtId] is the Census GEOID.
 export default async function DistrictPage({

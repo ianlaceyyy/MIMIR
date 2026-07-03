@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { listStates } from "@/lib/data";
 
+// Always render at request time so the page reflects current database state.
+export const dynamic = "force-dynamic";
+
 // Home: enter the catalog by state. From here: state -> district -> candidates.
 export default async function HomePage() {
   const states = await listStates();

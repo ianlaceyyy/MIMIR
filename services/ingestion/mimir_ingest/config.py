@@ -15,6 +15,7 @@ class Settings:
     fec_api_key: str = os.environ.get("FEC_API_KEY", "")
     congress_api_key: str = os.environ.get("CONGRESS_GOV_API_KEY", "")
     census_api_key: str = os.environ.get("CENSUS_API_KEY", "")
+    senate_lda_api_key: str = os.environ.get("SENATE_LDA_API_KEY", "")
     x_bearer_token: str = os.environ.get("X_API_BEARER_TOKEN", "")
     anthropic_api_key: str = os.environ.get("ANTHROPIC_API_KEY", "")
     classifier_model: str = os.environ.get("CLASSIFIER_MODEL", "claude-sonnet-5")

@@ -77,6 +77,14 @@ export async function getDistrict(geoid: string): Promise<DistrictDetail | null>
     (seat?.candidacies ?? []).map((c) => toCandidateSummary(c)),
   );
 
+  const dem = d.demographics;
+  const censusSource = {
+    kind: "CENSUS" as const,
+    name: "U.S. Census Bureau (ACS)",
+    url: "https://www.census.gov/programs-surveys/acs",
+    fetchedAt: dem?.fetchedAt?.toISOString() ?? new Date(0).toISOString(),
+  };
+
   // TODO: serialize PostGIS geometry to GeoJSON via a raw query (ST_AsGeoJSON).
   return {
     id: d.id,
@@ -87,11 +95,20 @@ export async function getDistrict(geoid: string): Promise<DistrictDetail | null>
     cookPvi: d.cookPvi,
     isOpenSeat: seat?.isOpenSeat ?? false,
     candidateCount: candidates.length,
-    population: d.population,
-    demographics: null, // TODO map d.demographics + its SourceRef
+    population: d.population ?? dem?.population ?? null,
+    demographics: dem
+      ? {
+          vintage: dem.vintage,
+          medianIncome: dem.medianIncome,
+          medianAge: dem.medianAge,
+          bachelorsPlusShare: dem.bachelorsPlusShare,
+          veteranShare: dem.veteranShare,
+          source: censusSource,
+        }
+      : null,
     candidates,
     geometryGeoJson: null,
-    sources: [],
+    sources: [censusSource],
   };
 }
 

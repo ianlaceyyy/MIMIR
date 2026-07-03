@@ -19,14 +19,14 @@ from typing import Any, Iterable
 from ..config import settings
 from ..http import get_json
 from ..reference.states import district_geoid
+from ..targets import TARGET_DISTRICTS
 from .base import Record, RunContext, Source, SourceKind, SourceRef
 
 FEC_BASE = "https://api.open.fec.gov/v1"
 SOURCE_NAME = "Federal Election Commission"
 
-# Districts to pull. v1 keeps this explicit so a run touches a known, small set;
-# a later version can discover all House seats from /elections. (state_abbr, number)
-DEFAULT_DISTRICTS: list[tuple[str, int]] = [("IL", 13)]
+# Districts to pull come from the shared target list (see mimir_ingest/targets.py).
+DEFAULT_DISTRICTS = TARGET_DISTRICTS
 
 _PARTY = {
     "DEM": "DEMOCRATIC",
