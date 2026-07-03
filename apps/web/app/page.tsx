@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listStates } from "@/lib/data";
+import { UsDistrictMap } from "@/components/UsDistrictMap";
 
 // Always render at request time so the page reflects current database state.
 export const dynamic = "force-dynamic";
@@ -17,6 +18,13 @@ export default async function HomePage() {
           candidates running for that seat — their background, campaign finance, stated
           positions, and record — with every fact traced to a primary source.
         </p>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-ink/60">
+          Select a state
+        </h2>
+        <UsDistrictMap states={states} />
       </section>
 
       <section>
