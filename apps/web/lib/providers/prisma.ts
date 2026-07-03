@@ -113,10 +113,69 @@ export async function getDistrict(geoid: string): Promise<DistrictDetail | null>
 }
 
 export async function getCandidate(id: string): Promise<CandidateDetail | null> {
-  // TODO: assemble finance, issue stances, votes, and sponsored bills with SourceRefs.
-  void prisma;
-  void id;
-  return null;
+  const c = await prisma.candidate.findUnique({
+    where: { id },
+    include: {
+      candidacies: {
+        include: { seat: { include: { district: { include: { state: true } } } } },
+      },
+      financeSummaries: true,
+      issueStances: true,
+      sponsoredBills: { include: { bill: true }, take: 20 },
+      votes: { orderBy: { date: "desc" }, take: 10 },
+    },
+  });
+  if (!c) return null;
+
+  const candidacy = c.candidacies[0];
+  const district = candidacy?.seat?.district;
+  const label = district ? districtLabel(district.state.abbr, district.number) : "";
+  const fin = c.financeSummaries[0];
+
+  const source = {
+    kind: "FEC" as const,
+    name: "Federal Election Commission",
+    url: `https://api.open.fec.gov/v1/candidate/${c.fecCandidateId}`,
+    fetchedAt: c.fetchedAt?.toISOString() ?? new Date(0).toISOString(),
+  };
+
+  return {
+    id: c.id,
+    fullName: c.fullName,
+    party: c.party,
+    isIncumbent: candidacy?.status === "INCUMBENT",
+    campaignWebsiteUrl: c.campaignWebsiteUrl,
+    totalRaised: fin?.totalRaised ? Number(fin.totalRaised) : null,
+    topIssues: c.issueStances.map((s) => s.category).slice(0, 3),
+    source,
+    districtLabel: label,
+    finance: fin
+      ? {
+          cycle: fin.cycle,
+          totalRaised: Number(fin.totalRaised),
+          totalSpent: Number(fin.totalSpent),
+          cashOnHand: Number(fin.cashOnHand),
+          smallDollarShare: fin.smallDollarShare ? Number(fin.smallDollarShare) : null,
+          topIndustries: [],
+          source,
+        }
+      : null,
+    issueStances: c.issueStances.map((s) => ({
+      category: s.category,
+      stanceQuote: s.stanceQuote,
+      sourceUrl: s.sourceUrl,
+      extractedAt: s.extractedAt.toISOString(),
+    })),
+    recentVotes: c.votes.map((v) => ({
+      billRef: v.billRef ?? "",
+      position: v.position,
+      date: v.date?.toISOString() ?? null,
+    })),
+    sponsoredBills: c.sponsoredBills.map((s) => ({
+      title: s.bill.title ?? `${s.bill.billType.toUpperCase()} ${s.bill.billNumber}`,
+      latestAction: s.bill.latestAction,
+    })),
+  };
 }
 
 // --- helpers ---------------------------------------------------------------

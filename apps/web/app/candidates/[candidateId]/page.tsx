@@ -82,10 +82,28 @@ export default async function CandidatePage({
       {candidate.isIncumbent && (
         <section>
           <h2 className="mb-3 text-lg font-semibold">Legislative record</h2>
-          <p className="text-sm text-ink/60">
-            Sponsored bills and recent votes (Congress.gov) render here for sitting
-            members. TODO: wire up in lib/data.getCandidate().
-          </p>
+          {candidate.sponsoredBills.length === 0 ? (
+            <p className="text-sm text-ink/60">
+              No sponsored bills on file yet (Congress.gov).
+            </p>
+          ) : (
+            <>
+              <h3 className="mb-2 text-sm font-medium uppercase tracking-wide text-ink/60">
+                Sponsored bills
+              </h3>
+              <ul className="space-y-2">
+                {candidate.sponsoredBills.map((b, i) => (
+                  <li key={i} className="rounded border border-black/10 p-3 text-sm">
+                    <div className="font-medium">{b.title}</div>
+                    {b.latestAction && (
+                      <div className="mt-1 text-xs text-ink/60">{b.latestAction}</div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-ink/50">Source: Congress.gov</p>
+            </>
+          )}
         </section>
       )}
     </div>

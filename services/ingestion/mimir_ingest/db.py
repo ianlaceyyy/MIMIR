@@ -114,6 +114,20 @@ ENTITY_CONFIG: dict[str, dict[str, Any]] = {
         "provenance": ["fetchedAt"],
         "has_id": True,
     },
+    "Bill": {
+        "table": '"Bill"',
+        "conflict": ["congress", "billType", "billNumber"],
+        "enums": {},
+        "provenance": [],
+        "has_id": True,
+    },
+    "BillSponsorship": {
+        "table": '"BillSponsorship"',
+        "conflict": ["billId", "candidateId"],
+        "enums": {},
+        "provenance": [],
+        "has_id": True,
+    },
 }
 
 # Resolve an entity's cuid id from a natural key (for FK resolution).
@@ -123,6 +137,10 @@ ID_LOOKUP: dict[str, str] = {
     "Seat": (
         'SELECT s.id FROM "Seat" s JOIN "District" d ON s."districtId" = d.id '
         'WHERE d.geoid = :geoid AND s.cycle = :cycle AND s.type = :type'
+    ),
+    "Bill": (
+        'SELECT id FROM "Bill" WHERE congress = :congress '
+        'AND "billType" = :billType AND "billNumber" = :billNumber'
     ),
 }
 
