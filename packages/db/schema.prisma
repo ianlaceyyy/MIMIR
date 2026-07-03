@@ -1,0 +1,394 @@
+// Mímir — canonical data model.
+// This schema is the single source of truth for the database. The Python ingestion
+// service mirrors it (mimir_ingest/db.py) and CI diffs the two (TODO: parity check).
+//
+// Provenance is mandatory: every fact-bearing row links to a SourceRef, and the
+// ingestion upsert layer rejects rows that lack one. See docs/DATA_MODEL.md.
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "./generated/client"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis]
+}
+
+// ---------------------------------------------------------------------------
+// Enums (shared vocabulary — mirror packages/shared)
+// ---------------------------------------------------------------------------
+
+enum Party {
+  DEMOCRATIC
+  REPUBLICAN
+  LIBERTARIAN
+  GREEN
+  INDEPENDENT
+  OTHER
+  UNKNOWN
+}
+
+enum IncumbencyStatus {
+  INCUMBENT
+  CHALLENGER
+  OPEN_SEAT
+  UNKNOWN
+}
+
+enum ElectionType {
+  GENERAL
+  PRIMARY
+  SPECIAL
+  RUNOFF
+}
+
+enum IssueCategory {
+  ECONOMIC_POLICY
+  FOREIGN_POLICY
+  IMMIGRATION
+  HEALTHCARE
+  TAXES
+  DEFENSE
+  EDUCATION
+  ENERGY
+  CLIMATE
+  AI
+  TECHNOLOGY
+  HOUSING
+  LABOR
+  SOCIAL_ISSUES
+  CRIMINAL_JUSTICE
+}
+
+enum VotePosition {
+  YEA
+  NAY
+  PRESENT
+  NOT_VOTING
+}
+
+enum ContributionType {
+  INDIVIDUAL
+  PAC
+  PARTY_COMMITTEE
+  CANDIDATE_SELF
+  TRANSFER
+  OTHER
+}
+
+enum SourceKind {
+  FEC
+  CONGRESS
+  CENSUS
+  X
+  CAMPAIGN_SITE
+  HOUSE_CLERK
+  SENATE_LDA
+  MIT_ELECTION_LAB
+}
+
+// ---------------------------------------------------------------------------
+// Provenance backbone
+// ---------------------------------------------------------------------------
+
+model Source {
+  id          String      @id @default(cuid())
+  kind        SourceKind
+  name        String
+  homepageUrl String
+  reliability Int         @default(5) // 1..5, see docs/DATA_SOURCES.md
+  refs        SourceRef[]
+
+  @@unique([kind, name])
+}
+
+/// Attaches an exact origin (url + fetch time) to a specific record.
+/// The ingestion upsert layer requires one for every fact-bearing row.
+model SourceRef {
+  id        String   @id @default(cuid())
+  source    Source   @relation(fields: [sourceId], references: [id])
+  sourceId  String
+  url       String
+  fetchedAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([sourceId])
+}
+
+// ---------------------------------------------------------------------------
+// Geography & seats
+// ---------------------------------------------------------------------------
+
+model State {
+  fips      String     @id // 2-digit FIPS
+  abbr      String     @unique
+  name      String
+  districts District[]
+}
+
+model District {
+  id           String        @id @default(cuid())
+  geoid        String        @unique // Census GEOID — stable upsert key
+  state        State         @relation(fields: [stateFips], references: [fips])
+  stateFips    String
+  number       Int // 0 for at-large
+  cookPvi      String? // e.g. "R+4" — partisan lean, as-of dated via sourceRef
+  population   Int?
+  // PostGIS geometry stored via raw SQL / Unsupported; served to the map as GeoJSON.
+  geometry     Unsupported("geometry(MultiPolygon, 4326)")?
+
+  demographics Demographics?
+  seats        Seat[]
+
+  sourceRefId  String?
+  fetchedAt    DateTime?
+
+  @@index([stateFips, number])
+}
+
+model Seat {
+  id           String       @id @default(cuid())
+  district     District     @relation(fields: [districtId], references: [id])
+  districtId   String
+  cycle        Int // e.g. 2026
+  electionDate DateTime?
+  type         ElectionType @default(GENERAL)
+  isOpenSeat   Boolean      @default(false)
+
+  candidacies  Candidacy[]
+
+  @@unique([districtId, cycle, type])
+}
+
+// ---------------------------------------------------------------------------
+// Candidates
+// ---------------------------------------------------------------------------
+
+model Candidate {
+  id                  String            @id @default(cuid())
+  fecCandidateId      String            @unique // FEC stable key
+  bioguideId          String?           @unique // Congress.gov, if a sitting member
+  fullName            String
+  party               Party             @default(UNKNOWN)
+  campaignWebsiteUrl  String?
+  principalCommitteeId String?
+
+  candidacies         Candidacy[]
+  financeSummaries    FinanceSummary[]
+  contributions       Contribution[]
+  indieExpenditures   IndependentExpenditure[]
+  issueStances        IssueStance[]
+  sponsoredBills      BillSponsorship[]
+  votes               Vote[]
+  socialAccounts      SocialAccount[]
+  disclosures         Disclosure[]
+
+  fetchedAt           DateTime?
+
+  @@index([party])
+}
+
+/// Join between a Candidate and a Seat, with per-contest status.
+model Candidacy {
+  id          String           @id @default(cuid())
+  candidate   Candidate        @relation(fields: [candidateId], references: [id])
+  candidateId String
+  seat        Seat             @relation(fields: [seatId], references: [id])
+  seatId      String
+  status      IncumbencyStatus @default(UNKNOWN)
+
+  @@unique([candidateId, seatId])
+  @@index([seatId])
+}
+
+// ---------------------------------------------------------------------------
+// Campaign finance (FEC)
+// ---------------------------------------------------------------------------
+
+model FinanceSummary {
+  id                 String    @id @default(cuid())
+  candidate          Candidate @relation(fields: [candidateId], references: [id])
+  candidateId        String
+  cycle              Int
+  totalRaised        Decimal   @default(0)
+  totalSpent         Decimal   @default(0)
+  cashOnHand         Decimal   @default(0)
+  individualShare    Decimal? // fraction from individuals
+  pacShare           Decimal? // fraction from PACs
+  smallDollarShare   Decimal? // fraction from <=$200 donors
+  averageDonation    Decimal?
+  fetchedAt          DateTime?
+
+  @@unique([candidateId, cycle])
+}
+
+model Contribution {
+  id             String           @id @default(cuid())
+  candidate      Candidate        @relation(fields: [candidateId], references: [id])
+  candidateId    String
+  amount         Decimal
+  date           DateTime?
+  donorName      String?
+  employer       String?
+  occupation     String?
+  industry       String? // normalized sector for aggregation
+  city           String?
+  state          String?
+  type           ContributionType @default(INDIVIDUAL)
+  fecTransactionId String?        @unique
+
+  @@index([candidateId, industry])
+  @@index([candidateId, date])
+}
+
+model IndependentExpenditure {
+  id            String    @id @default(cuid())
+  candidate     Candidate @relation(fields: [candidateId], references: [id])
+  candidateId   String
+  committeeName String?
+  amount        Decimal
+  supportOppose String? // "S" or "O" — for/against, factual FEC field
+  date          DateTime?
+  fecId         String?   @unique
+
+  @@index([candidateId])
+}
+
+// ---------------------------------------------------------------------------
+// Platform / issues  (crawled campaign sites + guarded LLM classification)
+// ---------------------------------------------------------------------------
+
+model IssueStance {
+  id          String        @id @default(cuid())
+  candidate   Candidate     @relation(fields: [candidateId], references: [id])
+  candidateId String
+  category    IssueCategory
+  stanceQuote String // verbatim candidate text — never paraphrased by Mímir
+  sourceUrl   String // where the quote was published
+  extractedAt DateTime
+
+  @@index([candidateId, category])
+}
+
+// ---------------------------------------------------------------------------
+// Legislative record (Congress.gov) — for incumbents
+// ---------------------------------------------------------------------------
+
+model Bill {
+  id            String            @id @default(cuid())
+  congress      Int
+  billType      String // hr, s, hjres, ...
+  billNumber    Int
+  title         String?
+  summary       String?
+  introducedAt  DateTime?
+  latestAction  String?
+  sponsorships  BillSponsorship[]
+
+  @@unique([congress, billType, billNumber])
+}
+
+model BillSponsorship {
+  id           String    @id @default(cuid())
+  bill         Bill      @relation(fields: [billId], references: [id])
+  billId       String
+  candidate    Candidate @relation(fields: [candidateId], references: [id])
+  candidateId  String
+  isCosponsor  Boolean   @default(false)
+
+  @@unique([billId, candidateId])
+}
+
+model Vote {
+  id                   String       @id @default(cuid())
+  candidate            Candidate    @relation(fields: [candidateId], references: [id])
+  candidateId          String
+  chamber              String
+  congress             Int
+  session              Int
+  rollNumber           Int
+  date                 DateTime?
+  position             VotePosition
+  partyMajorityPosition VotePosition?
+  topic                String?
+  outcome              String?
+  billRef              String? // e.g. "hr-1234-118"
+
+  @@unique([chamber, congress, session, rollNumber, candidateId])
+  @@index([candidateId, date])
+}
+
+// ---------------------------------------------------------------------------
+// Social presence (X API)
+// ---------------------------------------------------------------------------
+
+model SocialAccount {
+  id          String       @id @default(cuid())
+  candidate   Candidate    @relation(fields: [candidateId], references: [id])
+  candidateId String
+  platform    String       @default("X")
+  handle      String
+  posts       SocialPost[]
+
+  @@unique([platform, handle])
+}
+
+model SocialPost {
+  id           String        @id @default(cuid())
+  account      SocialAccount @relation(fields: [accountId], references: [id])
+  accountId    String
+  externalId   String        @unique
+  text         String
+  postedAt     DateTime?
+  type         String? // tweet | reply | retweet | quote
+  likeCount    Int?
+  repostCount  Int?
+  hashtags     String[]
+  mentions     String[]
+  issueTags    IssueCategory[]
+
+  @@index([accountId, postedAt])
+}
+
+// ---------------------------------------------------------------------------
+// District demographics (Census ACS)
+// ---------------------------------------------------------------------------
+
+model Demographics {
+  id                 String   @id @default(cuid())
+  district           District @relation(fields: [districtId], references: [id])
+  districtId         String   @unique
+  vintage            Int // ACS year
+  medianIncome       Int?
+  population         Int?
+  medianAge          Float?
+  bachelorsPlusShare Float?
+  veteranShare       Float?
+  internetShare      Float?
+  urbanShare         Float?
+  raceJson           Json? // race/ethnicity breakdown
+  employmentJson     Json? // sector shares: manufacturing, agriculture, energy, ...
+  housingJson        Json?
+  fetchedAt          DateTime?
+}
+
+// ---------------------------------------------------------------------------
+// Disclosures (House Clerk, Senate LDA)
+// ---------------------------------------------------------------------------
+
+model Disclosure {
+  id          String     @id @default(cuid())
+  candidate   Candidate  @relation(fields: [candidateId], references: [id])
+  candidateId String
+  kind        String // FINANCIAL | STOCK_ACT | LOBBYING | COMMITTEE_ASSIGNMENT
+  title       String?
+  filedAt     DateTime?
+  documentUrl String?
+  dataJson    Json?
+
+  @@index([candidateId, kind])
+}

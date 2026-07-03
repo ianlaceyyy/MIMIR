@@ -1,0 +1,30 @@
+[project]
+name = "mimir-ingest"
+version = "0.1.0"
+description = "Mímir ETL — pulls, normalizes, and sources every civic dataset."
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.2",
+    "geoalchemy2>=0.15",   # PostGIS geometry
+    "tenacity>=8.3",       # retry/backoff for flaky gov APIs
+    "python-dotenv>=1.0",
+    "anthropic>=0.40",     # platform-text issue classification (guarded)
+    "selectolax>=0.3",     # fast HTML parsing for campaign-site crawl
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.2", "ruff>=0.5", "respx>=0.21"]
+
+[project.scripts]
+mimir-ingest = "mimir_ingest.pipelines.run:main"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

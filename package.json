@@ -1,0 +1,19 @@
+{
+  "name": "mimir",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Non-partisan civic-information platform cataloging U.S. elections by district.",
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "db:migrate": "pnpm --filter @mimir/db migrate",
+    "db:studio": "pnpm --filter @mimir/db studio",
+    "lint": "pnpm --filter web lint",
+    "typecheck": "pnpm -r typecheck"
+  }
+}
