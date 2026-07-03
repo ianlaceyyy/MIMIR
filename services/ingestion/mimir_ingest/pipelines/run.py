@@ -10,7 +10,7 @@ import argparse
 import logging
 
 from ..config import settings
-from ..db import upsert_records
+from ..db import seed_states, upsert_records
 from ..sources import REGISTRY
 from ..sources.base import RunContext
 
@@ -37,9 +37,17 @@ def main() -> None:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--source", help=f"one of: {', '.join(REGISTRY)}")
     group.add_argument("--all", action="store_true", help="run every registered source")
+    group.add_argument(
+        "--seed-states", action="store_true", help="seed the State reference table"
+    )
     parser.add_argument("--cycle", type=int, default=settings.cycle)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
+
+    if args.seed_states:
+        n = seed_states(dry_run=args.dry_run)
+        log.info("seeded %d states dry_run=%s", n, args.dry_run)
+        return
 
     ctx = RunContext(cycle=args.cycle, dry_run=args.dry_run)
     sources = list(REGISTRY) if args.all else [args.source]

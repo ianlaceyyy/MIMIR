@@ -40,12 +40,21 @@ class Record:
     `entity` is the target table (e.g. "Candidate", "District"); `key` holds the
     stable external id(s) used for idempotent upsert; `data` is the column payload.
     `source` is REQUIRED — the upsert layer rejects records without it.
+
+    `refs` resolves foreign keys by NATURAL key at write time, because Prisma models
+    use generated cuid primary keys that ingestion doesn't know in advance. Each entry
+    maps a FK column to (referenced_entity, natural_key_dict); the upsert layer looks
+    up the referenced row's id and fills the column. Example (a Seat referencing its
+    District by GEOID):
+
+        refs={"districtId": ("District", {"geoid": "1713"})}
     """
 
     entity: str
     key: dict[str, Any]
     data: dict[str, Any]
     source: SourceRef
+    refs: dict[str, tuple[str, dict[str, Any]]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.source is None:  # pragma: no cover - defensive
