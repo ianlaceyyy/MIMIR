@@ -15,31 +15,43 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         {USING_SAMPLE_DATA && <SampleDataBanner />}
-        <header className="border-b border-black/10">
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-            <Link href="/" className="text-xl font-semibold text-well">
-              Mímir
+
+        {/* Floating glass header — sticky, translucent, no hard boundary. */}
+        <header className="sticky top-0 z-30 px-3 pt-3">
+          <div className="glass mx-auto flex max-w-6xl items-center justify-between rounded-2xl px-5 py-3">
+            <Link href="/" className="text-lg font-semibold tracking-tight">
+              Mí<span className="text-[#2f6fed]">mir</span>
             </Link>
-            <nav className="flex gap-4 text-sm">
-              <Link href="/">Browse</Link>
-              <Link href="/about">About</Link>
-              <Link href="/methodology">Methodology</Link>
+            <nav className="flex items-center gap-1 text-sm text-muted">
+              <Link href="/" className="rounded-full px-3 py-1.5 hover:bg-black/5 hover:text-ink">
+                Map
+              </Link>
+              <Link
+                href="/about"
+                className="rounded-full px-3 py-1.5 hover:bg-black/5 hover:text-ink"
+              >
+                About
+              </Link>
+              <Link
+                href="/methodology"
+                className="rounded-full px-3 py-1.5 hover:bg-black/5 hover:text-ink"
+              >
+                Methodology
+              </Link>
             </nav>
           </div>
         </header>
 
-        <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+        <main className="mx-auto w-full max-w-6xl px-3 py-6">{children}</main>
 
-        <footer className="mt-16 border-t border-black/10">
-          <div className="mx-auto max-w-5xl px-4 py-6 text-xs text-ink/60">
-            Non-partisan by design. All facts drawn from primary government sources and
-            candidates&rsquo; own official material — each one cited. Mímir makes no
-            endorsements. See our{" "}
-            <Link href="/methodology" className="underline">
-              methodology
-            </Link>
-            .
-          </div>
+        <footer className="mx-auto max-w-6xl px-6 py-10 text-xs text-muted">
+          Non-partisan by design. Facts drawn from primary government sources and
+          candidates&rsquo; own official material — each one cited. Mímir makes no
+          endorsements.{" "}
+          <Link href="/methodology" className="underline underline-offset-2">
+            Methodology
+          </Link>
+          .
         </footer>
       </body>
     </html>

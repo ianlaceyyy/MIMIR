@@ -1,21 +1,30 @@
 import Link from "next/link";
 import type { CandidateSummary } from "@/lib/types";
 import { ISSUE_LABELS } from "@mimir/shared";
+import { partyStyle } from "@/lib/party";
 import { PartyLabel } from "./PartyLabel";
-import { SourceBadge } from "./SourceBadge";
 
-// The at-a-glance candidate summary. IDENTICAL structure for every candidate — this
-// component is the enforcement point for equal visual treatment (NONPARTISAN_POLICY).
-//
-// Markup note: the whole card is clickable via the stretched-link pattern (the name's
-// Link covers the card with an ::after overlay). The SourceBadge is its own <a>, so
-// it must NOT be nested inside a Link — nested anchors are invalid HTML and break
-// hydration. It sits above the overlay via relative z-10.
+// At-a-glance candidate card: floating glass, a party-colored accent rail, and the
+// key facts. Identical structure for every candidate. Whole card is clickable via the
+// stretched-link pattern on the name.
+function money(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `$${Math.round(n / 1_000)}k`;
+  return `$${n}`;
+}
+
 export function CandidateCard({ candidate }: { candidate: CandidateSummary }) {
+  const s = partyStyle(candidate.party);
   return (
-    <div className="relative rounded border border-black/10 p-4 hover:border-well">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="font-medium">
+    <div className="glass glass-hover relative overflow-hidden rounded-2xl p-4">
+      {/* party accent rail */}
+      <span
+        className="absolute inset-y-0 left-0 w-1"
+        style={{ background: s.color, opacity: 0.85 }}
+      />
+
+      <div className="flex items-start justify-between gap-2 pl-2">
+        <h3 className="font-semibold leading-tight tracking-tight">
           <Link
             href={`/candidates/${candidate.id}`}
             className="after:absolute after:inset-0 after:content-['']"
@@ -26,21 +35,26 @@ export function CandidateCard({ candidate }: { candidate: CandidateSummary }) {
         <PartyLabel party={candidate.party} />
       </div>
 
-      <div className="mt-1 flex items-center gap-2 text-xs text-ink/60">
-        {candidate.isIncumbent && (
-          <span className="rounded bg-black/5 px-1.5 py-0.5">Incumbent</span>
-        )}
-        {candidate.totalRaised != null && (
-          <span>Raised ${candidate.totalRaised.toLocaleString()}</span>
+      <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-2 text-xs text-muted">
+        <span
+          className="rounded-full px-2 py-0.5 font-medium"
+          style={{ background: s.tint, color: s.color }}
+        >
+          {candidate.isIncumbent ? "Incumbent" : "Challenger"}
+        </span>
+        {candidate.totalRaised != null && candidate.totalRaised > 0 && (
+          <span className="rounded-full bg-black/[0.04] px-2 py-0.5">
+            {money(candidate.totalRaised)} raised
+          </span>
         )}
       </div>
 
       {candidate.topIssues.length > 0 && (
-        <ul className="mt-3 flex flex-wrap gap-1">
+        <ul className="mt-3 flex flex-wrap gap-1 pl-2">
           {candidate.topIssues.map((issue) => (
             <li
               key={issue}
-              className="rounded-full border border-black/10 px-2 py-0.5 text-xs text-ink/70"
+              className="rounded-full border hairline bg-white/40 px-2 py-0.5 text-xs text-muted"
             >
               {ISSUE_LABELS[issue]}
             </li>
@@ -48,8 +62,9 @@ export function CandidateCard({ candidate }: { candidate: CandidateSummary }) {
         </ul>
       )}
 
-      <div className="relative z-10 mt-3 w-fit">
-        <SourceBadge source={candidate.source} />
+      <div className="mt-3 flex items-center gap-1.5 pl-2 text-[11px] text-muted/80">
+        <span className="h-1 w-1 rounded-full bg-current" />
+        Source: {candidate.source.name}
       </div>
     </div>
   );

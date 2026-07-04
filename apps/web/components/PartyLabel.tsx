@@ -1,21 +1,17 @@
 import type { Party } from "@mimir/shared";
+import { partyStyle } from "@/lib/party";
 
-// Party shown as a small, equal-weight factual label. Colors are muted and used
-// ONLY here — never to theme a page or elevate one candidate. See NONPARTISAN_POLICY.
-const LABEL: Record<Party, string> = {
-  DEMOCRATIC: "Democratic",
-  REPUBLICAN: "Republican",
-  LIBERTARIAN: "Libertarian",
-  GREEN: "Green",
-  INDEPENDENT: "Independent",
-  OTHER: "Other",
-  UNKNOWN: "Unknown",
-};
-
-export function PartyLabel({ party }: { party: Party }) {
+// Party shown as a small color-coded pill — a colored dot + label. Factual color,
+// applied identically to every party. See lib/party.ts.
+export function PartyLabel({ party, className = "" }: { party: Party; className?: string }) {
+  const s = partyStyle(party);
   return (
-    <span className="rounded border border-black/15 bg-white px-2 py-0.5 text-xs text-ink/80">
-      {LABEL[party]}
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}
+      style={{ background: s.tint, color: s.color }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.color }} />
+      {s.label}
     </span>
   );
 }

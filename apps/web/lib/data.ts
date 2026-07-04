@@ -23,11 +23,17 @@ type Provider = {
   listDistrictsByState(abbr: string): Promise<DistrictSummary[]>;
   getDistrict(geoid: string): Promise<DistrictDetail | null>;
   getCandidate(id: string): Promise<CandidateDetail | null>;
+  districtParties(): Promise<Record<string, string>>;
 };
 
 async function provider(): Promise<Provider> {
   if (DATA_SOURCE === "prisma") return import("./providers/prisma");
   return fixtures;
+}
+
+/** geoid -> incumbent party, for color-coding the national map. */
+export async function districtParties(): Promise<Record<string, string>> {
+  return (await provider()).districtParties();
 }
 
 export async function listStates(): Promise<StateSummary[]> {

@@ -1,56 +1,42 @@
-import Link from "next/link";
-import { listStates } from "@/lib/data";
+import { listStates, districtParties } from "@/lib/data";
 import { UsDistrictMap } from "@/components/UsDistrictMap";
 
 // Always render at request time so the page reflects current database state.
 export const dynamic = "force-dynamic";
 
-// Home: enter the catalog by district (map) or by state. district -> candidates.
+// Home: the map IS the interface. Explore by district (click to zoom) or jump to a
+// state. Everything drills down to who's running.
 export default async function HomePage() {
-  const states = await listStates();
+  const [states, parties] = await Promise.all([listStates(), districtParties()]);
 
   return (
-    <div className="space-y-8">
-      <section className="space-y-3">
-        <h1 className="text-3xl font-semibold text-well">Know who&rsquo;s on your ballot.</h1>
-        <p className="max-w-2xl text-ink/80">
-          Mímir catalogs every U.S. congressional election by district and shows all the
-          candidates running for that seat — their background, campaign finance, stated
-          positions, and record — with every fact traced to a primary source.
+    <div className="space-y-5">
+      <section className="px-1">
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          Know who&rsquo;s on your ballot.
+        </h1>
+        <p className="mt-1 max-w-2xl text-sm text-muted">
+          Every U.S. congressional district — color-coded by party, every candidate,
+          every fact traced to a primary source. Tap the map to dive in.
         </p>
       </section>
 
-      <section>
-        <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-ink/60">
-          Find your district
-        </h2>
-        <UsDistrictMap states={states} />
-      </section>
+      <UsDistrictMap states={states} parties={parties} />
 
-      <section>
-        <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-ink/60">
-          Browse by state
-        </h2>
-        {states.length === 0 ? (
-          <p className="rounded border border-dashed border-black/20 p-6 text-sm text-ink/60">
-            No data loaded yet. Run the ingestion service to populate districts.
-          </p>
-        ) : (
-          <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6">
-            {states.map((s) => (
-              <li key={s.fips}>
-                <Link
-                  href={`/states/${s.abbr.toLowerCase()}`}
-                  className="block rounded border border-black/10 px-3 py-2 text-sm hover:border-well"
-                >
-                  <span className="font-medium">{s.abbr}</span>
-                  <span className="ml-1 text-ink/50">({s.districtCount})</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {/* legend */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-1 text-xs text-muted">
+        {[
+          ["Democratic", "#2f6fed"],
+          ["Republican", "#e0483d"],
+          ["Independent", "#7c5cff"],
+          ["Other / vacant", "#d7dbe2"],
+        ].map(([name, color]) => (
+          <span key={name} className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
+            {name}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

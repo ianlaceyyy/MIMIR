@@ -112,6 +112,16 @@ export async function getDistrict(geoid: string): Promise<DistrictDetail | null>
   };
 }
 
+export async function districtParties(): Promise<Record<string, string>> {
+  const rows = await prisma.$queryRaw<{ geoid: string; party: string }[]>`
+    SELECT d.geoid AS geoid, c.party AS party
+    FROM "District" d
+    JOIN "Seat" s ON s."districtId" = d.id
+    JOIN "Candidacy" ca ON ca."seatId" = s.id AND ca.status = 'INCUMBENT'
+    JOIN "Candidate" c ON c.id = ca."candidateId"`;
+  return Object.fromEntries(rows.map((r) => [r.geoid, r.party]));
+}
+
 export async function getCandidate(id: string): Promise<CandidateDetail | null> {
   const c = await prisma.candidate.findUnique({
     where: { id },

@@ -114,6 +114,13 @@ ENTITY_CONFIG: dict[str, dict[str, Any]] = {
         "provenance": ["fetchedAt"],
         "has_id": True,
     },
+    "FinanceSummary": {
+        "table": '"FinanceSummary"',
+        "conflict": ["candidateId", "cycle"],
+        "enums": {},
+        "provenance": ["fetchedAt"],
+        "has_id": True,
+    },
     "Bill": {
         "table": '"Bill"',
         "conflict": ["congress", "billType", "billNumber"],

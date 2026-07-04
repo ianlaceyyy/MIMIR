@@ -1,40 +1,34 @@
 import type { DistrictDetail } from "@/lib/types";
 
-// District overview: identity, partisan lean, population, and key demographics.
-// The map (PostGIS geometry -> GeoJSON) mounts in the placeholder below.
+// District overview: identity, population, and key demographics — in a floating glass
+// panel with a clean stat grid.
 export function DistrictHeader({ district }: { district: DistrictDetail }) {
-  return (
-    <section className="grid gap-6 md:grid-cols-[2fr,3fr]">
-      <div className="space-y-3">
-        <h1 className="text-2xl font-semibold">{district.label}</h1>
-        <dl className="grid grid-cols-2 gap-y-2 text-sm">
-          {district.cookPvi && (
-            <>
-              <dt className="text-ink/60">Partisan lean (Cook PVI)</dt>
-              <dd>{district.cookPvi}</dd>
-            </>
-          )}
-          {district.population != null && (
-            <>
-              <dt className="text-ink/60">Population</dt>
-              <dd>{district.population.toLocaleString()}</dd>
-            </>
-          )}
-          <dt className="text-ink/60">Seat status</dt>
-          <dd>{district.isOpenSeat ? "Open seat" : "Contested"}</dd>
-          {district.demographics?.medianIncome != null && (
-            <>
-              <dt className="text-ink/60">Median income</dt>
-              <dd>${district.demographics.medianIncome.toLocaleString()}</dd>
-            </>
-          )}
-        </dl>
-      </div>
+  const stats: [string, string][] = [];
+  if (district.cookPvi) stats.push(["Partisan lean", district.cookPvi]);
+  if (district.population != null)
+    stats.push(["Population", district.population.toLocaleString()]);
+  stats.push(["Seat", district.isOpenSeat ? "Open seat" : "Contested"]);
+  if (district.demographics?.medianIncome != null)
+    stats.push(["Median income", `$${district.demographics.medianIncome.toLocaleString()}`]);
+  if (district.demographics?.medianAge != null)
+    stats.push(["Median age", `${district.demographics.medianAge}`]);
+  if (district.demographics?.bachelorsPlusShare != null)
+    stats.push([
+      "Bachelor's+",
+      `${Math.round(district.demographics.bachelorsPlusShare * 100)}%`,
+    ]);
 
-      {/* Map placeholder — render TIGER geometry with MapLibre once geometryGeoJson is wired. */}
-      <div className="flex min-h-[220px] items-center justify-center rounded border border-dashed border-black/20 text-sm text-ink/40">
-        District map (TIGER/Line geometry)
-      </div>
+  return (
+    <section className="glass rounded-3xl p-6">
+      <h1 className="text-3xl font-semibold tracking-tight">{district.label}</h1>
+      <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 md:grid-cols-4">
+        {stats.map(([k, v]) => (
+          <div key={k}>
+            <dt className="text-xs uppercase tracking-wide text-muted">{k}</dt>
+            <dd className="mt-0.5 text-lg font-medium tracking-tight">{v}</dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }

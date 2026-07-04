@@ -6,11 +6,12 @@ Register new sources here so pipelines can look them up by name.
 from __future__ import annotations
 
 from .base import Source
-from . import census_acs, congress, disclosures, fec, lobbying, tiger, twitter_x
+from . import census_acs, congress, disclosures, fec, fec_finance, lobbying, tiger, twitter_x
 
 # name -> module providing a `get_source()` factory.
 REGISTRY: dict[str, object] = {
     "fec": fec,
+    "fec_finance": fec_finance,
     "congress": congress,
     "census": census_acs,
     "tiger": tiger,

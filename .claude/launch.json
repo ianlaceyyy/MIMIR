@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "mimir-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["pnpm@9", "--dir", "apps/web", "start"],
+      "port": 3000
+    }
+  ]
+}

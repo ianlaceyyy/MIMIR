@@ -388,3 +388,12 @@ export async function getDistrict(geoid: string): Promise<DistrictDetail | null>
 export async function getCandidate(id: string): Promise<CandidateDetail | null> {
   return CANDIDATES[id] ?? null;
 }
+
+export async function districtParties(): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  for (const d of Object.values(DISTRICTS)) {
+    const inc = d.candidateIds.map((id) => CANDIDATES[id]).find((c) => c.isIncumbent);
+    if (inc) out[d.detail.geoid] = inc.party;
+  }
+  return out;
+}
