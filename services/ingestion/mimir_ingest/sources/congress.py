@@ -102,6 +102,7 @@ class CongressSource(Source):
                 key={"fecCandidateId": fec},
                 data={"bioguideId": bio},
                 source=_ref(member_url),
+                update_only=True,  # patch bioguideId onto the existing FEC candidate
             )
         ]
 

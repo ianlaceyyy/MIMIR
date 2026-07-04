@@ -25,10 +25,18 @@ def run_source(name: str, ctx: RunContext) -> int:
     source = module.get_source()  # type: ignore[attr-defined]
 
     total = 0
+    errors = 0
     for raw in source.fetch(ctx):
         records = source.normalize(raw)
-        total += upsert_records(records, dry_run=ctx.dry_run)
-    log.info("source=%s cycle=%s upserted=%d dry_run=%s", name, ctx.cycle, total, ctx.dry_run)
+        try:
+            total += upsert_records(records, dry_run=ctx.dry_run)
+        except Exception as exc:  # keep going — one bad item shouldn't abort the run
+            errors += 1
+            log.warning("source=%s item failed (%s): %s", name, type(exc).__name__, exc)
+    log.info(
+        "source=%s cycle=%s upserted=%d errors=%d dry_run=%s",
+        name, ctx.cycle, total, errors, ctx.dry_run,
+    )
     return total
 
 

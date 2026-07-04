@@ -221,8 +221,6 @@ def _upsert_one(conn: Connection, rec: Record, sourceref_id: str) -> None:
     resolved = _resolve_refs(conn, rec)
     columns: dict[str, Any] = {**rec.key, **rec.data, **resolved}
 
-    if cfg["has_id"]:
-        columns["id"] = gen_id()
     if "sourceRefId" in cfg["provenance"]:
         columns["sourceRefId"] = sourceref_id
     if "fetchedAt" in cfg["provenance"]:
@@ -230,6 +228,23 @@ def _upsert_one(conn: Connection, rec: Record, sourceref_id: str) -> None:
 
     enums = cfg["enums"]
     conflict = cfg["conflict"]
+
+    # Update-only: patch existing row's non-key columns; never insert (avoids NOT NULL
+    # violations when we only have a few columns, e.g. attaching bioguideId).
+    if rec.update_only:
+        set_cols = [c for c in columns if c not in conflict]
+        if not set_cols:
+            return
+        set_clause = ", ".join(f"{_col(c)} = {_placeholder(c, enums)}" for c in set_cols)
+        where = " AND ".join(f"{_col(c)} = {_placeholder(c, enums)}" for c in conflict)
+        conn.execute(
+            text(f'UPDATE {cfg["table"]} SET {set_clause} WHERE {where}'), columns
+        )
+        return
+
+    if cfg["has_id"]:
+        columns["id"] = gen_id()
+
     col_names = list(columns.keys())
     insert_cols = ", ".join(_col(c) for c in col_names)
     insert_vals = ", ".join(_placeholder(c, enums) for c in col_names)

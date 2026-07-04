@@ -55,6 +55,11 @@ class Record:
     data: dict[str, Any]
     source: SourceRef
     refs: dict[str, tuple[str, dict[str, Any]]] = field(default_factory=dict)
+    # When True, the upsert layer issues an UPDATE ... WHERE (keyed on the conflict
+    # columns) instead of INSERT ... ON CONFLICT. Use to patch a few columns of an
+    # existing row without providing its NOT NULL columns (e.g. attaching a member's
+    # bioguideId to a Candidate that FEC already created).
+    update_only: bool = False
 
     def __post_init__(self) -> None:
         if self.source is None:  # pragma: no cover - defensive
