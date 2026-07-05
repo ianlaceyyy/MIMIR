@@ -71,6 +71,7 @@ export interface FinanceView {
 export interface CandidateDetail extends CandidateSummary {
   districtLabel: string;
   finance: FinanceView | null;
+  topDonors?: { employer: string; amount: number }[];
   issueStances: IssueStanceView[];
   // Incumbent-only sections; empty for challengers.
   recentVotes: { billRef: string; position: string; date: string | null }[];

@@ -87,6 +87,25 @@ export default async function CandidatePage({
         ) : (
           <p className="mt-2 text-sm text-muted">No FEC finance data on file yet.</p>
         )}
+
+        {c.topDonors && c.topDonors.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-xs font-medium uppercase tracking-wide text-muted">
+              Top donors by employer
+            </h3>
+            <ul className="mt-2 divide-y divide-black/[0.06]">
+              {c.topDonors.map((d, i) => (
+                <li key={i} className="flex items-center justify-between py-1.5 text-sm">
+                  <span className="capitalize">{d.employer.toLowerCase()}</span>
+                  <span className="font-medium tabular-nums">{money(d.amount)}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-muted">
+              Aggregated individual contributions by donor&rsquo;s employer. Source: FEC.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Stated positions */}

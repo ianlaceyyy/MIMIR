@@ -133,6 +133,7 @@ export async function getCandidate(id: string): Promise<CandidateDetail | null> 
       issueStances: true,
       sponsoredBills: { include: { bill: true }, take: 20 },
       votes: { orderBy: { date: "desc" }, take: 10 },
+      contributions: { orderBy: { amount: "desc" }, take: 8 },
     },
   });
   if (!c) return null;
@@ -172,6 +173,9 @@ export async function getCandidate(id: string): Promise<CandidateDetail | null> 
           source,
         }
       : null,
+    topDonors: c.contributions
+      .filter((ct) => ct.employer)
+      .map((ct) => ({ employer: ct.employer as string, amount: Number(ct.amount) })),
     issueStances: c.issueStances.map((s) => ({
       category: s.category,
       stanceQuote: s.stanceQuote,
