@@ -45,6 +45,12 @@ enum ElectionType {
   RUNOFF
 }
 
+enum Office {
+  HOUSE // tied to a District
+  SENATE // statewide
+  GOVERNOR // statewide
+}
+
 enum IssueCategory {
   ECONOMIC_POLICY
   FOREIGN_POLICY
@@ -128,6 +134,7 @@ model State {
   abbr      String     @unique
   name      String
   districts District[]
+  seats     Seat[] // statewide seats (Senate/Governor)
 }
 
 model District {
@@ -152,8 +159,13 @@ model District {
 
 model Seat {
   id           String       @id @default(cuid())
-  district     District     @relation(fields: [districtId], references: [id])
-  districtId   String
+  office       Office       @default(HOUSE)
+  // House seats reference a District; statewide seats (Senate/Governor) reference a
+  // State instead. Exactly one of districtId / stateFips is set.
+  district     District?    @relation(fields: [districtId], references: [id])
+  districtId   String?
+  state        State?       @relation(fields: [stateFips], references: [fips])
+  stateFips    String?
   cycle        Int // e.g. 2026
   electionDate DateTime?
   type         ElectionType @default(GENERAL)
@@ -161,7 +173,8 @@ model Seat {
 
   candidacies  Candidacy[]
 
-  @@unique([districtId, cycle, type])
+  @@unique([districtId, cycle, type]) // House
+  @@unique([stateFips, office, cycle, type]) // statewide (Senate/Governor)
 }
 
 // ---------------------------------------------------------------------------

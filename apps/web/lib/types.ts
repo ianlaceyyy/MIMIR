@@ -68,6 +68,14 @@ export interface FinanceView {
   source: SourceRef;
 }
 
+export interface StatewideRace {
+  stateFips: string;
+  stateAbbr: string;
+  stateName: string;
+  isOpenSeat: boolean;
+  candidates: CandidateSummary[];
+}
+
 export interface CandidateDetail extends CandidateSummary {
   districtLabel: string;
   finance: FinanceView | null;

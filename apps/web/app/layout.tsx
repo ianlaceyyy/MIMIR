@@ -24,7 +24,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Link>
             <nav className="flex items-center gap-1 text-sm text-muted">
               <Link href="/" className="rounded-full px-3 py-1.5 hover:bg-black/5 hover:text-ink">
-                Map
+                House
+              </Link>
+              <Link
+                href="/senate"
+                className="rounded-full px-3 py-1.5 hover:bg-black/5 hover:text-ink"
+              >
+                Senate
               </Link>
               <Link
                 href="/about"

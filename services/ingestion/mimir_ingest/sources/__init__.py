@@ -13,6 +13,7 @@ from . import (
     fec,
     fec_donors,
     fec_finance,
+    fec_senate,
     lobbying,
     tiger,
     twitter_x,
@@ -21,6 +22,7 @@ from . import (
 # name -> module providing a `get_source()` factory.
 REGISTRY: dict[str, object] = {
     "fec": fec,
+    "fec_senate": fec_senate,
     "fec_finance": fec_finance,
     "fec_donors": fec_donors,
     "congress": congress,

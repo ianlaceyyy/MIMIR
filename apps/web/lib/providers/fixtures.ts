@@ -397,3 +397,7 @@ export async function districtParties(): Promise<Record<string, string>> {
   }
   return out;
 }
+
+export async function listSenateRaces(): Promise<import("../types").StatewideRace[]> {
+  return []; // sample dataset covers House only
+}

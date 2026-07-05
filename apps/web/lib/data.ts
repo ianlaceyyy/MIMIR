@@ -12,6 +12,7 @@ import type {
   DistrictDetail,
   DistrictSummary,
   StateSummary,
+  StatewideRace,
 } from "./types";
 import * as fixtures from "./providers/fixtures";
 
@@ -24,6 +25,7 @@ type Provider = {
   getDistrict(geoid: string): Promise<DistrictDetail | null>;
   getCandidate(id: string): Promise<CandidateDetail | null>;
   districtParties(): Promise<Record<string, string>>;
+  listSenateRaces(): Promise<StatewideRace[]>;
 };
 
 async function provider(): Promise<Provider> {
@@ -34,6 +36,11 @@ async function provider(): Promise<Provider> {
 /** geoid -> incumbent party, for color-coding the national map. */
 export async function districtParties(): Promise<Record<string, string>> {
   return (await provider()).districtParties();
+}
+
+/** 2026 statewide Senate races with candidates. */
+export async function listSenateRaces(): Promise<StatewideRace[]> {
+  return (await provider()).listSenateRaces();
 }
 
 export async function listStates(): Promise<StateSummary[]> {

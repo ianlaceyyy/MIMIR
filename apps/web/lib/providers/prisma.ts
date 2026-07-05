@@ -112,6 +112,26 @@ export async function getDistrict(geoid: string): Promise<DistrictDetail | null>
   };
 }
 
+export async function listSenateRaces(): Promise<import("../types").StatewideRace[]> {
+  const seats = await prisma.seat.findMany({
+    where: { office: "SENATE", cycle: 2026 },
+    include: {
+      state: true,
+      candidacies: { include: { candidate: { include: { financeSummaries: true } } } },
+    },
+  });
+  return seats
+    .filter((s) => s.state)
+    .map((s) => ({
+      stateFips: s.state!.fips,
+      stateAbbr: s.state!.abbr,
+      stateName: s.state!.name,
+      isOpenSeat: s.isOpenSeat,
+      candidates: orderCandidates(s.candidacies.map((c) => toCandidateSummary(c))),
+    }))
+    .sort((a, b) => a.stateName.localeCompare(b.stateName));
+}
+
 export async function districtParties(): Promise<Record<string, string>> {
   const rows = await prisma.$queryRaw<{ geoid: string; party: string }[]>`
     SELECT d.geoid AS geoid, c.party AS party

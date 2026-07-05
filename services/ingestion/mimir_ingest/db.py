@@ -93,6 +93,14 @@ ENTITY_CONFIG: dict[str, dict[str, Any]] = {
         "provenance": [],
         "has_id": True,
     },
+    # Statewide seat (Senate/Governor) — same table, different natural key.
+    "StatewideSeat": {
+        "table": '"Seat"',
+        "conflict": ["stateFips", "office", "cycle", "type"],
+        "enums": {"office": "Office", "type": "ElectionType"},
+        "provenance": [],
+        "has_id": True,
+    },
     "Candidate": {
         "table": '"Candidate"',
         "conflict": ["fecCandidateId"],
@@ -151,6 +159,11 @@ ID_LOOKUP: dict[str, str] = {
     "Seat": (
         'SELECT s.id FROM "Seat" s JOIN "District" d ON s."districtId" = d.id '
         'WHERE d.geoid = :geoid AND s.cycle = :cycle AND s.type = :type'
+    ),
+    "StatewideSeat": (
+        'SELECT id FROM "Seat" WHERE "stateFips" = :stateFips '
+        'AND office = CAST(:office AS "Office") AND cycle = :cycle '
+        'AND type = CAST(:type AS "ElectionType")'
     ),
     "Bill": (
         'SELECT id FROM "Bill" WHERE congress = :congress '
