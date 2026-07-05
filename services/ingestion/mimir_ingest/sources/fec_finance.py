@@ -57,14 +57,28 @@ class FecFinanceSource(Source):
         records: list[Record] = []
         for r in raw["rows"]:
             fec_id = r["candidate_id"]
+            receipts = float(r.get("receipts") or 0)
+            itemized = float(r.get("individual_itemized_contributions") or 0)
+            unitemized = float(r.get("individual_unitemized_contributions") or 0)
+            pac = float(r.get("other_political_committee_contributions") or 0)
+            individual = itemized + unitemized
+
+            def share(part: float) -> float | None:
+                return round(part / receipts, 4) if receipts > 0 else None
+
             records.append(
                 Record(
                     entity="FinanceSummary",
                     key={"cycle": cycle},
                     data={
-                        "totalRaised": r.get("receipts") or 0,
+                        "totalRaised": receipts,
                         "totalSpent": r.get("disbursements") or 0,
                         "cashOnHand": r.get("cash_on_hand_end_period") or 0,
+                        # Donor composition — who the money came from.
+                        "individualShare": share(individual),
+                        "pacShare": share(pac),
+                        # Small-dollar = unitemized (individual gifts ≤ $200, not itemized).
+                        "smallDollarShare": share(unitemized),
                     },
                     source=_ref(f"{FEC_BASE}/candidate/{fec_id}/totals"),
                     refs={"candidateId": ("Candidate", {"fecCandidateId": fec_id})},

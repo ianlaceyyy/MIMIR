@@ -165,7 +165,9 @@ export async function getCandidate(id: string): Promise<CandidateDetail | null> 
           totalRaised: Number(fin.totalRaised),
           totalSpent: Number(fin.totalSpent),
           cashOnHand: Number(fin.cashOnHand),
-          smallDollarShare: fin.smallDollarShare ? Number(fin.smallDollarShare) : null,
+          smallDollarShare: fin.smallDollarShare != null ? Number(fin.smallDollarShare) : null,
+          individualShare: fin.individualShare != null ? Number(fin.individualShare) : null,
+          pacShare: fin.pacShare != null ? Number(fin.pacShare) : null,
           topIndustries: [],
           source,
         }

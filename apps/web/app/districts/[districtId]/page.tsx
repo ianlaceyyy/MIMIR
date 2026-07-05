@@ -18,27 +18,24 @@ export default async function DistrictPage({
   if (!district) notFound();
 
   return (
-    <div className="space-y-8">
-      <Link
-        href={`/states/${district.stateAbbr.toLowerCase()}`}
-        className="text-sm text-well underline"
-      >
-        ← {district.stateAbbr} districts
+    <div className="space-y-6">
+      <Link href="/" className="text-sm text-[#2f6fed] underline underline-offset-2">
+        ← Map
       </Link>
 
       <DistrictHeader district={district} />
 
       <section>
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-lg font-semibold">
+        <div className="mb-3 flex items-baseline justify-between px-1">
+          <h2 className="text-lg font-semibold tracking-tight">
             Candidates ({district.candidates.length})
           </h2>
           {/* Non-partisan guarantee: disclose the ordering rule. */}
-          <span className="text-xs text-ink/50">Ordered: {CANDIDATE_SORT_RULE}</span>
+          <span className="text-xs text-muted">Ordered: {CANDIDATE_SORT_RULE}</span>
         </div>
 
         {district.candidates.length === 0 ? (
-          <p className="rounded border border-dashed border-black/20 p-6 text-sm text-ink/60">
+          <p className="glass rounded-2xl p-6 text-sm text-muted">
             No candidates recorded for this seat yet.
           </p>
         ) : (

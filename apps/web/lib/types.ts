@@ -62,6 +62,8 @@ export interface FinanceView {
   totalSpent: number;
   cashOnHand: number;
   smallDollarShare: number | null;
+  individualShare?: number | null;
+  pacShare?: number | null;
   topIndustries: { industry: string; total: number }[];
   source: SourceRef;
 }
