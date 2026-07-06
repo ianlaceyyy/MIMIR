@@ -83,5 +83,5 @@ export interface CandidateDetail extends CandidateSummary {
   issueStances: IssueStanceView[];
   // Incumbent-only sections; empty for challengers.
   recentVotes: { billRef: string; position: string; date: string | null }[];
-  sponsoredBills: { title: string; latestAction: string | null }[];
+  sponsoredBills: { title: string; latestAction: string | null; policyArea?: string | null }[];
 }

@@ -298,11 +298,13 @@ model Bill {
   billNumber    Int
   title         String?
   summary       String?
+  policyArea    String? // Congress.gov policy area (e.g. "Health", "Taxation")
   introducedAt  DateTime?
   latestAction  String?
   sponsorships  BillSponsorship[]
 
   @@unique([congress, billType, billNumber])
+  @@index([policyArea])
 }
 
 model BillSponsorship {

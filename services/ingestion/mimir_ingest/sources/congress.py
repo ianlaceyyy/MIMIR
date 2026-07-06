@@ -121,6 +121,7 @@ class CongressSource(Source):
                     key={"congress": congress, "billType": btype, "billNumber": bnum},
                     data={
                         "title": b.get("title"),
+                        "policyArea": (b.get("policyArea") or {}).get("name"),
                         "introducedAt": b.get("introducedDate"),
                         "latestAction": latest,
                     },

@@ -210,6 +210,7 @@ export async function getCandidate(id: string): Promise<CandidateDetail | null> 
     sponsoredBills: c.sponsoredBills.map((s) => ({
       title: s.bill.title ?? `${s.bill.billType.toUpperCase()} ${s.bill.billNumber}`,
       latestAction: s.bill.latestAction,
+      policyArea: s.bill.policyArea,
     })),
   };
 }

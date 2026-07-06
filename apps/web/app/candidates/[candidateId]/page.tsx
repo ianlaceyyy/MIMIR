@@ -133,34 +133,65 @@ export default async function CandidatePage({
         )}
       </section>
 
-      {/* Legislative record (incumbents) */}
+      {/* Legislative record — sponsored bills grouped by policy domain (incumbents) */}
       {c.isIncumbent && (
         <section className="glass rounded-3xl p-6">
           <h2 className="text-lg font-semibold tracking-tight">Legislative record</h2>
+          <p className="mt-0.5 text-sm text-muted">
+            Bills this member sponsored, by policy area.
+          </p>
           {c.sponsoredBills.length === 0 ? (
-            <p className="mt-2 text-sm text-muted">No sponsored bills on file yet.</p>
+            <p className="mt-3 text-sm text-muted">No sponsored bills on file yet.</p>
           ) : (
             <>
-              <h3 className="mt-3 text-xs font-medium uppercase tracking-wide text-muted">
-                Sponsored bills
-              </h3>
-              <ul className="mt-2 space-y-2">
-                {c.sponsoredBills.map((b, i) => (
-                  <li key={i} className="rounded-2xl border hairline bg-white/40 p-3 text-sm">
-                    <div className="font-medium">{b.title}</div>
-                    {b.latestAction && (
-                      <div className="mt-1 text-xs text-muted">{b.latestAction}</div>
-                    )}
-                  </li>
+              <div className="mt-4 space-y-5">
+                {groupByPolicyArea(c.sponsoredBills).map(([area, bills]) => (
+                  <div key={area}>
+                    <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#2f6fed]" />
+                      {area}
+                      <span className="font-normal text-muted">({bills.length})</span>
+                    </h3>
+                    <ul className="space-y-2">
+                      {bills.map((b, i) => (
+                        <li
+                          key={i}
+                          className="rounded-2xl border hairline bg-white/40 p-3 text-sm"
+                        >
+                          <div className="font-medium">{b.title}</div>
+                          {b.latestAction && (
+                            <div className="mt-1 text-xs text-muted">{b.latestAction}</div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
-              <p className="mt-3 text-xs text-muted">Source: Congress.gov</p>
+              </div>
+              <p className="mt-4 text-xs text-muted">Source: Congress.gov</p>
             </>
           )}
         </section>
       )}
     </div>
   );
+}
+
+type Bill = { title: string; latestAction: string | null; policyArea?: string | null };
+
+// Group sponsored bills by Congress.gov policy area; largest groups first,
+// "Uncategorized" last.
+function groupByPolicyArea(bills: Bill[]): [string, Bill[]][] {
+  const groups = new Map<string, Bill[]>();
+  for (const b of bills) {
+    const area = b.policyArea || "Uncategorized";
+    (groups.get(area) ?? groups.set(area, []).get(area)!).push(b);
+  }
+  return [...groups.entries()].sort((a, b) => {
+    if (a[0] === "Uncategorized") return 1;
+    if (b[0] === "Uncategorized") return -1;
+    return b[1].length - a[1].length;
+  });
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
